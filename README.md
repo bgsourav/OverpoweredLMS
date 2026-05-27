@@ -1,22 +1,9 @@
 # OverpoweredLMS — Wabi
 
-A self-contained learning management system built for **GATE DA (Data Science & AI) AIR 1 preparation**. No server, no build step — one HTML file and one JS file.
 
 [![CI & Deploy](https://github.com/bgsourav/OverpoweredLMS/actions/workflows/ci.yml/badge.svg)](https://github.com/bgsourav/OverpoweredLMS/actions/workflows/ci.yml)
 
 **Live:** https://bgsourav.github.io/OverpoweredLMS/
-
----
-
-## Philosophy
-
-GATE DA AIR 1 (2026) scored 90/100. Only 7 marks separate AIR 1 from AIR 100 — those 7 marks are insight questions, not recall. Wabi trains at **olympiad depth** so GATE questions feel easy:
-
-- **Tier 1** — GATE floor: formula + standard application
-- **Tier 2** — GATE ceiling: edge cases, why it works
-- **Tier 3** — Beyond GATE: prove it, derive it, find the flaw
-
-A student who masters Tier 3 finds Tier 1 automatic.
 
 ---
 
@@ -38,7 +25,7 @@ Each lesson contains:
 - Common traps
 - Cross-topic connections
 
-Each sector unlocks a **chapter test** (MCQ / MSQ / NAT) after all lessons are complete — scored using GATE DA marking: +2 correct, −0.67 wrong on MCQ, no negative on MSQ/NAT.
+Each sector unlocks a **chapter test** (MCQ / MSQ / NAT) after all lessons are complete — scored using standard test marking: +2 correct, −0.67 wrong on MCQ, no negative on MSQ/NAT.
 
 ---
 
