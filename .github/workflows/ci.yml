@@ -1,0 +1,85 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Validate + Docker smoke-test ─────────────────────────────────────────
+  validate:
+    name: Validate & Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          test -f index.html || (echo "❌ index.html missing" && exit 1)
+          test -f tests.js   || (echo "❌ tests.js missing"   && exit 1)
+          echo "✓ Required files present"
+
+      - name: Validate HTML structure
+        run: |
+          grep -q 'window\.SECTORS'      index.html || (echo "❌ SECTORS missing"           && exit 1)
+          grep -q 'window\.CONTENT'      index.html || (echo "❌ CONTENT missing"            && exit 1)
+          grep -q 'tests\.js'            index.html || (echo "❌ tests.js script tag missing" && exit 1)
+          grep -q 'ReactDOM\.createRoot' index.html || (echo "❌ React mount missing"         && exit 1)
+          echo "✓ HTML structure valid"
+
+      - name: Validate tests.js
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const src = fs.readFileSync('tests.js', 'utf8');
+          const sectors = ['cond','eig','grad','algo','pyth','prob','stat','lin','opt','dsa','db','ml','ai'];
+          let missing = sectors.filter(s => !src.includes(s + ':'));
+          if (missing.length) { console.error('❌ Missing sectors:', missing); process.exit(1); }
+          const qCount = (src.match(/id:"/g) || []).length;
+          console.log(`✓ All 13 sectors present, ${qCount} questions found`);
+          EOF
+
+      - name: Build Docker image
+        run: docker build -t wabi-lms:ci .
+
+      - name: Smoke-test container
+        run: |
+          docker run -d -p 8080:80 --name wabi wabi-lms:ci
+          sleep 2
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
+          echo "HTTP status: $STATUS"
+          [ "$STATUS" = "200" ] || (echo "❌ Got HTTP $STATUS" && docker logs wabi && exit 1)
+          curl -sf http://localhost:8080/         | grep -q 'Wabi'         || (echo "❌ Title not found"       && exit 1)
+          curl -sf http://localhost:8080/tests.js | grep -q 'window.TESTS' || (echo "❌ tests.js not served"   && exit 1)
+          docker stop wabi && docker rm wabi
+          echo "✓ Container smoke test passed"
+
+  # ── Deploy to GitHub Pages (main only) ───────────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
