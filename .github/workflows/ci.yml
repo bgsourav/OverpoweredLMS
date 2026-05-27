@@ -23,10 +23,10 @@ jobs:
 
       - name: Validate HTML structure
         run: |
-          grep -q 'window\.SECTORS'      index.html || (echo "❌ SECTORS missing"           && exit 1)
-          grep -q 'window\.CONTENT'      index.html || (echo "❌ CONTENT missing"            && exit 1)
+          grep -q 'window\.SECTORS'      index.html || (echo "❌ SECTORS missing"            && exit 1)
+          grep -q 'window\.CONTENT'      index.html || (echo "❌ CONTENT missing"             && exit 1)
           grep -q 'tests\.js'            index.html || (echo "❌ tests.js script tag missing" && exit 1)
-          grep -q 'ReactDOM\.createRoot' index.html || (echo "❌ React mount missing"         && exit 1)
+          grep -q 'ReactDOM\.createRoot' index.html || (echo "❌ React mount missing"          && exit 1)
           echo "✓ HTML structure valid"
 
       - name: Validate tests.js
@@ -35,7 +35,7 @@ jobs:
           const fs = require('fs');
           const src = fs.readFileSync('tests.js', 'utf8');
           const sectors = ['cond','eig','grad','algo','pyth','prob','stat','lin','opt','dsa','db','ml','ai'];
-          let missing = sectors.filter(s => !src.includes(s + ':'));
+          const missing = sectors.filter(s => !src.includes(s + ':'));
           if (missing.length) { console.error('❌ Missing sectors:', missing); process.exit(1); }
           const qCount = (src.match(/id:"/g) || []).length;
           console.log(`✓ All 13 sectors present, ${qCount} questions found`);
@@ -51,8 +51,8 @@ jobs:
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
           echo "HTTP status: $STATUS"
           [ "$STATUS" = "200" ] || (echo "❌ Got HTTP $STATUS" && docker logs wabi && exit 1)
-          curl -sf http://localhost:8080/         | grep -q 'Wabi'         || (echo "❌ Title not found"       && exit 1)
-          curl -sf http://localhost:8080/tests.js | grep -q 'window.TESTS' || (echo "❌ tests.js not served"   && exit 1)
+          curl -sf http://localhost:8080/         | grep -q 'Wabi'         || (echo "❌ Title not found"     && exit 1)
+          curl -sf http://localhost:8080/tests.js | grep -q 'window.TESTS' || (echo "❌ tests.js not served" && exit 1)
           docker stop wabi && docker rm wabi
           echo "✓ Container smoke test passed"
 
@@ -64,24 +64,13 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/configure-pages@v4
+      - uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          exclude_assets: '.github,Dockerfile,.gitignore'
